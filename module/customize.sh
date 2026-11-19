@@ -101,46 +101,46 @@ if [ -f "$OLD_DIR/app_names.conf" ]; then
 fi
 
 ui_print "- MemKeep++"
-ui_print "- 机型: $(getprop ro.product.model) ($(getprop ro.product.device))"
-ui_print "- 系统: Android $(getprop ro.build.version.release) / SDK $(getprop ro.build.version.sdk)"
-ui_print "- 内核: $(uname -r)"
+ui_print "- Device: $(getprop ro.product.model) ($(getprop ro.product.device))"
+ui_print "- System: Android $(getprop ro.build.version.release) / SDK $(getprop ro.build.version.sdk)"
+ui_print "- Kernel: $(uname -r)"
 
 # 识别当前 root 管理器，给出对应的使用提示。
 # 模块本体在所有管理器上行为一致，差异只在「图标界面怎么打开」。
 ROOT_NAME="unknown"
 if [ -d /data/adb/ksu ]; then
   ROOT_NAME="KernelSU"
-  [ -d /data/adb/modules/susfs4ksu ] && ROOT_NAME="KernelSU (检测到 susfs)"
+  [ -d /data/adb/modules/susfs4ksu ] && ROOT_NAME="KernelSU (susfs detected)"
 elif [ -d /data/adb/ap ]; then
   ROOT_NAME="APatch"
 elif [ -d /data/adb/magisk ]; then
   ROOT_NAME="Magisk"
 fi
-ui_print "- Root 管理器: $ROOT_NAME"
+ui_print "- Root manager: $ROOT_NAME"
 
 # 硬件能力探测：zram 与压缩算法决定这台机能不能用上核心功能
 if [ -d /sys/block/zram0 ]; then
   ALG="$(cat /sys/block/zram0/comp_algorithm 2>/dev/null)"
-  ui_print "- ZRAM: 可用"
-  [ -n "$ALG" ] && ui_print "- 压缩算法: $ALG"
+  ui_print "- ZRAM: Available"
+  [ -n "$ALG" ] && ui_print "- Compression algorithms: $ALG"
 else
-  ui_print "- ZRAM: 未检测到 /sys/block/zram0，压缩功能将不可用"
+  ui_print "- ZRAM: /sys/block/zram0 is unavailable. Compression will be disabled."
 fi
 
 SDK="$(getprop ro.build.version.sdk)"
 if [ "$SDK" -lt 33 ] 2>/dev/null; then
-  ui_print "- 提示: 本模块按 Android 13+ 的参数集调试，低版本部分参数可能不存在（会自动跳过）"
+  ui_print "- This module was tested with Android 13+ settings. Missing settings on older versions are skipped."
 fi
 
-ui_print "- 配置: $MODPATH/config.conf"
-ui_print "- 保活名单: $MODPATH/keep_apps.conf"
+ui_print "- Configuration: $MODPATH/config.conf"
+ui_print "- App retention list: $MODPATH/keep_apps.conf"
 case "$ROOT_NAME" in
   Magisk*)
-    ui_print "- 图形界面需要额外安装 KsuWebUI Standalone 或 MMRL"
-    ui_print "- 不装也能用：点模块的动作按钮可查看状态，配置照常开机生效"
+    ui_print "- Install KsuWebUI Standalone or MMRL to use the WebUI."
+    ui_print "- You can still use the module action to view status. Settings apply at boot."
     ;;
   *)
-    ui_print "- 图形界面: 模块列表 → MemKeep++ → 打开"
+    ui_print "- WebUI: Modules > MemKeep++ > Open"
     ;;
 esac
 # 安装时把系统原值存一份，卸载或点「恢复原厂」时用来还原。
@@ -151,7 +151,7 @@ SNAP="$MODPATH/system_snapshot.conf"
 if [ -f "$OLD_DIR/system_snapshot.conf" ]; then
   cp -f "$OLD_DIR/system_snapshot.conf" "$SNAP" 2>/dev/null
   chmod 0644 "$SNAP" 2>/dev/null
-  ui_print "- 沿用上次的系统原值快照（升级不会把模块改过的值当成原厂值）"
+  ui_print "- Keeping the previous snapshot of system defaults across the update."
 else
 {
   # watermark_boost_factor / dirtytime_expire_seconds 由 tools.sh 的 apply_vm_common 写入，
@@ -190,16 +190,16 @@ else
   done
 } > "$SNAP" 2>/dev/null
 chmod 0644 "$SNAP" 2>/dev/null
-ui_print "- 已记录系统原值快照，可一键恢复"
+ui_print "- System defaults saved. You can restore them from the WebUI."
 fi
 
 if [ -f "$OLD_DIR/config.conf" ]; then
-  ui_print "- 升级：已保留 $MIG_KEPT 项上次的设置，保活名单 $MIG_LIST 个应用"
-  [ "${MIG_NAMES:-0}" -gt 0 ] 2>/dev/null && ui_print "- 已保留 $MIG_NAMES 个自定义应用名"
-  [ "$MIG_DROP" -gt 0 ] && ui_print "- 其中 $MIG_DROP 项取值不合法，已重置为新版默认值"
-  [ -f "$MODPATH/config.conf.old" ] && ui_print "- 旧配置留档: config.conf.old"
+  ui_print "- Upgrade: Kept $MIG_KEPT settings and $MIG_LIST apps in the retention list."
+  [ "${MIG_NAMES:-0}" -gt 0 ] 2>/dev/null && ui_print "- Kept $MIG_NAMES custom app names."
+  [ "$MIG_DROP" -gt 0 ] && ui_print "- Reset $MIG_DROP invalid settings to the new defaults."
+  [ -f "$MODPATH/config.conf.old" ] && ui_print "- Previous configuration backup: config.conf.old"
 else
-  ui_print "- 首次安装，使用默认配置"
+  ui_print "- First install. Using default settings."
 fi
 
-ui_print "- 安装完成，重启后生效"
+ui_print "- Installation complete. Reboot to apply."
